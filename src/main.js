@@ -1,6 +1,7 @@
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import * as dat from 'dat.gui';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/controls/OrbitControls.js';
+import * as dat from 'https://cdn.jsdelivr.net/npm/dat.gui@0.7.9/build/dat.gui.module.js';
+
 
 const gui = new dat.GUI();
 const settings = {
@@ -13,9 +14,50 @@ const settings = {
   flowAnimation: false
 };
 
+// Vertex Shader
+const vertexShader = `
+  uniform float u_time;
+  uniform float u_radius;
+  uniform float u_tube;
+  uniform float u_flowSpeed;
+  const float PI = 3.141592653589793238;
+
+  void main(){
+    float u = uv.x * 2.0 * PI;
+    float v = uv.y * 2.0 * PI;
+
+    v += u_time * u_flowSpeed;
+
+    float x = (u_radius + u_tube * cos(v)) * cos(u);
+    float y = (u_radius + u_tube * cos(v)) * sin(u);
+    float z = u_tube * sin(v);
+
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(x, y, z, 1.0);
+  }`;
+
+// Fragment Shader
+const fragmentShader = `
+  void main(){
+    gl_FragColor = vec4(0.0, 1.0, 0.4, 1.0);
+}`;
+
+const uniforms = {
+  u_time: { value: 0 },
+  u_radius: { value: settings.radius },
+  u_tube: { value: settings.tube },
+  u_flowSpeed: { value: 0.5 }
+};
+
+
 gui.add(settings, 'rotationSpeed', 0, 0.1);
-gui.add(settings, 'radius', 0.1, 5). onChange(() => { updateTorus();});
-gui.add(settings, 'tube', 0.1, 5).onChange(() => { updateTorus();});
+gui.add(settings, 'radius', 0.1, 5). onChange(() => {
+  updateTorus();
+  uniforms.u_radius.value = settings.radius;
+});
+gui.add(settings, 'tube', 0.1, 5).onChange(() => {
+  updateTorus();
+  uniforms.u_tube.value = settings.tube;
+});
 gui.add(settings, 'rotateX');
 gui.add(settings, 'rotateY');
 gui.add(settings, 'rotateZ');
@@ -30,11 +72,16 @@ const controls = new OrbitControls(camera, renderer.domElement);
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
-const TorusGeometry = new THREE.TorusGeometry( 1, 1, 40, 40 );
+const torusGeometry = new THREE.TorusGeometry( 1, 1, 40, 40 );
+const torusMaterial = new THREE.ShaderMaterial({
+  vertexShader,
+  fragmentShader,
+  uniforms,
+  wireframe: true
+});
 
-function makeTorusInstance(geometry, color, y) {
-  const material = new THREE.MeshBasicMaterial( { color, wireframe: true } );
-  const torus = new THREE.Mesh(geometry, material);
+function makeTorusInstance(y) {
+  const torus = new THREE.Mesh(torusGeometry, torusMaterial);
   torus.position.y = y;
   return torus;
 }
@@ -47,7 +94,7 @@ function updateTorus() {
   scene.add(torus);
 }
 
-const torus = makeTorusInstance(TorusGeometry, 0x00ff00, 0);
+const torus = makeTorusInstance(0);
 
 scene.add( torus );
 camera.position.y = 5;
@@ -57,6 +104,7 @@ function animate() {
   settings.rotateX && (torus.rotation.x += settings.rotationSpeed);
   settings.rotateY && (torus.rotation.y += settings.rotationSpeed);
   settings.rotateZ && (torus.rotation.z += settings.rotationSpeed);
+  settings.flowAnimation && (uniforms.u_time.value += settings.rotationSpeed);
 
   renderer.render( scene, camera );
   requestAnimationFrame( animate );
