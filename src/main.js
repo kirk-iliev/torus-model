@@ -1,6 +1,25 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import * as dat from 'dat.gui';
 
+const gui = new dat.GUI();
+const settings = {
+  rotationSpeed: 0.01,
+  radius: 1,
+  tube: 1,
+  rotateX: false,
+  rotateY: false,
+  rotateZ: false,
+  flowAnimation: false
+};
+
+gui.add(settings, 'rotationSpeed', 0, 0.1);
+gui.add(settings, 'radius', 0.1, 5). onChange(() => { updateTorus();});
+gui.add(settings, 'tube', 0.1, 5).onChange(() => { updateTorus();});
+gui.add(settings, 'rotateX');
+gui.add(settings, 'rotateY');
+gui.add(settings, 'rotateZ');
+gui.add(settings, 'flowAnimation');
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
@@ -11,7 +30,7 @@ const controls = new OrbitControls(camera, renderer.domElement);
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
-const TorusGeometry = new THREE.TorusGeometry( 0.5, 0.5, 25, 25 );
+const TorusGeometry = new THREE.TorusGeometry( 1, 1, 40, 40 );
 
 function makeTorusInstance(geometry, color, y) {
   const material = new THREE.MeshBasicMaterial( { color, wireframe: true } );
@@ -19,17 +38,26 @@ function makeTorusInstance(geometry, color, y) {
   torus.position.y = y;
   return torus;
 }
-const blueTorus =  makeTorusInstance(TorusGeometry, 0x0000ff, 3);
-const redTorus = makeTorusInstance(TorusGeometry, 0xff0000, 0);
-const greenTorus = makeTorusInstance(TorusGeometry, 0x00ff00, -3);
 
-scene.add( blueTorus, redTorus, greenTorus );
-camera.position.z = 5;
+function updateTorus() {
+  scene.remove(torus);
+  torus.geometry.dispose();
+  const newGeometry = new THREE.TorusGeometry(settings.radius, settings.tube, 40, 40);
+  torus.geometry = newGeometry;
+  scene.add(torus);
+}
+
+const torus = makeTorusInstance(TorusGeometry, 0x00ff00, 0);
+
+scene.add( torus );
+camera.position.y = 5;
 
 function animate() {
-  blueTorus.rotation.y += 0.01;
-  redTorus.rotation.x += 0.01;
-  greenTorus.rotation.z += 0.01;
+
+  settings.rotateX && (torus.rotation.x += settings.rotationSpeed);
+  settings.rotateY && (torus.rotation.y += settings.rotationSpeed);
+  settings.rotateZ && (torus.rotation.z += settings.rotationSpeed);
+
   renderer.render( scene, camera );
   requestAnimationFrame( animate );
   controls.update();
