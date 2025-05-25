@@ -10,7 +10,16 @@ const settings = {
   rotateX: false,
   rotateY: false,
   rotateZ: false,
-  flowAnimation: false
+  flowAnimation: false,
+  radialSegments: 40,
+  tubularSegments: 40
+};
+
+const uniforms = {
+  u_time: { value: 0 },
+  u_radius: { value: settings.radius },
+  u_tube: { value: settings.tube },
+  u_flowSpeed: { value: 1 }
 };
 
 // Vertex Shader
@@ -25,7 +34,7 @@ const vertexShader = `
     float u = uv.x * 2.0 * PI;
     float v = uv.y * 2.0 * PI;
 
-    v += u_time * u_flowSpeed;
+    v += u_time * u_flowSpeed * 1.15;
 
     float x = (u_radius + u_tube * cos(v)) * cos(u);
     float y = (u_radius + u_tube * cos(v)) * sin(u);
@@ -40,16 +49,9 @@ const fragmentShader = `
     gl_FragColor = vec4(0.0, 1.0, 0.4, 1.0);
 }`;
 
-const uniforms = {
-  u_time: { value: 0 },
-  u_radius: { value: settings.radius },
-  u_tube: { value: settings.tube },
-  u_flowSpeed: { value: 0.5 }
-};
-
 
 gui.add(settings, 'rotationSpeed', 0, 0.1);
-gui.add(settings, 'radius', 0.1, 5). onChange(() => {
+gui.add(settings, 'radius', 0.1, 5).onChange(() => {
   updateTorus();
   uniforms.u_radius.value = settings.radius;
 });
@@ -57,6 +59,12 @@ gui.add(settings, 'tube', 0.1, 5).onChange(() => {
   updateTorus();
   uniforms.u_tube.value = settings.tube;
 });
+gui.add(settings, 'radialSegments', 3, 100).onChange(() => {
+  updateTorus();
+})
+gui.add(settings, 'tubularSegments', 3, 100). onChange(() => {
+  updateTorus();
+})
 gui.add(settings, 'rotateX');
 gui.add(settings, 'rotateY');
 gui.add(settings, 'rotateZ');
@@ -88,7 +96,9 @@ function makeTorusInstance(y) {
 function updateTorus() {
   scene.remove(torus);
   torus.geometry.dispose();
-  const newGeometry = new THREE.TorusGeometry(settings.radius, settings.tube, 40, 40);
+  const newGeometry = new THREE.TorusGeometry(
+    settings.radius, settings.tube, settings.radialSegments, settings.tubularSegments
+  );
   torus.geometry = newGeometry;
   scene.add(torus);
 }
