@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import * as dat from 'dat.gui';
 const gui = new dat.GUI();
 
-// Default Torus parameters
+// Settings for the torus
 const settings = {
   rotationSpeed: 1,
   radius: 1,
