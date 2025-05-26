@@ -97,7 +97,17 @@ const controllers = {
   flowAnimation: gui.add(settings, 'flowAnimation'),
 }
 
-gui.add(reset, 'resetTorus').name('Click here to reset Torus')
+const resetCamera = {
+  resetCamera: () => {
+  camera.position.set(0, 4, 0);
+  camera.rotation.set(0, 0, 0);
+  controls.update();
+  }
+}
+
+gui.add(reset, 'resetTorus').name('Click here to reset simulation')
+gui.add(resetCamera, 'resetCamera').name('Click here to reset Camera');
+
 
 Object.values(controllers).forEach(controller => controller.updateDisplay());
 
